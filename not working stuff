@@ -1,0 +1,146 @@
+class DiscPackingOptimizer:
+    def __init__(self, k=0.001):
+        self.k = k  # Small constant for tiebreaker
+
+    def objective_function(self, params):
+        """Calculate the objective function F = P - k * Q"""
+        r1, r2, r3, x, a, y, *positions = params
+
+        # Calculate cell area
+        cell_area = abs(x * y)
+        if cell_area < 1e-10:
+            return -1e6
+
+        # Count total discs
+        num_additional_discs = len(positions) // 3
+        total_discs = 4 + num_additional_discs
+
+        # Count integer points in cell
+        integer_points = genIntPointsInCell(x, a, y)
+        num_points = len(integer_points)
+
+        # Calculate mean points per disc
+        P = num_points / total_discs if total_discs > 0 else 0
+
+        # Calculate coverage fraction
+        total_disc_area = 4 * np.pi * r1 ** 2
+        for i in range(0, len(positions), 3):
+            if i + 2 < len(positions):
+                disc_type = positions[i + 2]
+                radius = r2 if disc_type < 0.5 else r3
+                total_disc_area += np.pi * radius ** 2
+
+        Q = total_disc_area / cell_area
+
+        # Penalties for constraint violations
+        coverage_penalty = 1000 * check_coverage(params)
+        packing_penalty = 1000 * check_packing(params)
+
+        F = P - self.k * Q - coverage_penalty - packing_penalty
+        return -F  # Minimize negative for maximization
+
+    def optimize(self, num_additional_discs=2):
+        """Run the optimization"""
+        # Initial parameters: r1, r2, r3, x, a, y, then triplets of (x_pos, y_pos, type)
+        initial_params = [0.5, 0.3, 0.4, 2.0, 1.0, 1.5]
+
+        # Add initial positions for additional discs
+        for i in range(num_additional_discs):
+            initial_params.extend([1.0, 0.5, 0.0])  # x, y, type (0 for r2, 1 for r3)
+
+        # Bounds: radii > 0, cell parameters reasonable, positions within cell
+        bounds = [(0.1, 2.0)] * 3  # r1, r2, r3
+        bounds += [(0.5, 5.0), (-2.0, 2.0), (0.5, 5.0)]  # x, a, y
+
+        for i in range(num_additional_discs):
+            bounds.extend([(-1.0, 3.0), (-1.0, 3.0), (0.0, 1.0)])  # x_pos, y_pos, type
+
+        result = minimize(
+            self.objective_function,
+            initial_params,
+            method='L-BFGS-B',
+            bounds=bounds,
+            options={'maxiter': 1000}
+        )
+
+        return result
+
+
+# Example usage
+optimizer = DiscPackingOptimizer(k=0.01)
+result = optimizer.optimize(num_additional_discs=2)
+
+print(f"Optimization result: {result.success}")
+print(f"Optimal parameters: {result.x}")
+print(f"Optimal objective value: {-result.fun}")
+
+
+def check_packing(params):
+    """Check non-overlap constraint"""
+    r1, r2, r3, x, a, y, *positions = params
+
+    vertex_centers = [(0, 0), (x, 0), (a, y), (x + a, y)]
+    vertex_radii = [r1] * 4
+
+    additional_centers = []
+    additional_radii = []
+
+    for i in range(0, len(positions), 3):
+        if i + 2 < len(positions):
+            disc_x, disc_y, disc_type = positions[i], positions[i + 1], positions[i + 2]
+            additional_centers.append((disc_x, disc_y))
+            additional_radii.append(r2 if disc_type < 0.5 else r3)
+
+    all_centers = vertex_centers + additional_centers
+    all_radii = vertex_radii + additional_radii
+
+    overlap_violations = 0
+    for i in range(len(all_centers)):
+        for j in range(i + 1, len(all_centers)):
+            dist = np.sqrt((all_centers[i][0] - all_centers[j][0]) ** 2 +
+                           (all_centers[i][1] - all_centers[j][1]) ** 2)
+            min_dist = all_radii[i] + all_radii[j]
+            if dist < min_dist - 1e-10:
+                overlap_violations += 1
+
+    return overlap_violations
+
+
+
+def check_coverage(params):
+    """Check if all integer points are covered by at least one disc"""
+    r1, r2, r3, x, a, y, *positions = params
+
+    # Vertices have radius r1
+    vertex_centers = [(0, 0), (x, 0), (a, y), (x + a, y)]
+    vertex_radii = [r1] * 4
+
+    # Additional discs with radii r2 and r3
+    additional_centers = []
+    additional_radii = []
+
+    # Parse additional disc positions
+    for i in range(0, len(positions), 3):
+        if i + 2 < len(positions):
+            disc_x, disc_y, disc_type = positions[i], positions[i + 1], positions[i + 2]
+            additional_centers.append((disc_x, disc_y))
+            additional_radii.append(r2 if disc_type < 0.5 else r3)
+
+    all_centers = vertex_centers + additional_centers
+    all_radii = vertex_radii + additional_radii
+
+    integer_points = genIntPointsInCell(x, a, y)
+
+    coverage_violations = 0
+    for point in integer_points:
+        covered = False
+        for center, radius in zip(all_centers, all_radii):
+            if distToDisc(point, center, radius) <= 1e-10:
+                covered = True
+                break
+        if not covered:
+            coverage_violations += 1
+
+    return coverage_violations
+
+
