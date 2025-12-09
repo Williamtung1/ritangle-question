@@ -23,10 +23,10 @@ Calculate P for the unit cell by adding up the fractions **of** discs included i
 **Paraphrasing the problem:**
 - cover all the integer grid points on an infinite x-y plane
 - a point on the edge of a disc is considered covered
-- discs may touch but may not overlap
+- discs may touch but may not overlap                                     v
 - use 3 different sizes of discs in the whole plane 
-- Objective: maximise the mean number of points/disc
-- Tiebreaker: Minimises the fraction of the plane that is covered by the discs
+- Objective: maximise the mean number of points/disc                      v
+- Tiebreaker: Minimises the fraction of the plane that is covered by the discs         v
 - the unit cell must cover the plane using translation only
 
 **Continuous Variables to be optimised:**
@@ -37,10 +37,14 @@ Calculate P for the unit cell by adding up the fractions **of** discs included i
 **Conditions:**
 Covering: Every integer point (x,y) must be covered by at least one disc, center (xc,yc).
 ∣p−c∣≤ R for every integer point p
+
 Packing (Non-Overlap): The distance between any two disc centers ci and cj must be greater than or equal to the sum of their radii.
 ∣ci−cj∣ ≥ Ri + Rj (considering periodic boundaries)
+
 The shapes can only be parallelograms
+
 the vertices of the unit cell would be (0,0), (x,0), (a,y) and (x+a, y), where all the vertices would be the centres of the circles
+
 the radius is the same for the four circles centred the vertices of the unit cell
 
 **The objective function F :**
@@ -53,7 +57,8 @@ k is tiny constant
 **Thoughts:**
 - i think i should implement the calculation of p first and then iterate through a list of dummy data with all Variables constant except from one and get the curve to see approx how they look
 - the q func as well
-- idea is to iterate through the arr of circles(with the vertices of the unit cell(perhaps as attributes of UnitCell)), check for each if they are fully in the parallelograms or not, if not, (and if they are not on the edges either), find some universal way to integrate them and find the proportion of the circle being in the cell itself
+- idea is to iterate through the arr of circles(with the vertices of the unit cell(perhaps as attributes of UnitCell)), check for each if they are fully in the parallelograms or not, if not, (and if they are not on the edges either), find some universal way to integrate them and find the proportion of the circle being in the 
+cell itself
 - with the given vertices of the unit cell and the equations of the lines and circles, it should be fairly straightforward to determine how many points are in the enclosed area
 - would the circles on the inside be smaller than the ones centred on the vertices of the unit cell?
 

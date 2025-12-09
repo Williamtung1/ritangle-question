@@ -1,10 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
 
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-import matplotlib.patches as mpatches
-
 # import matplotlib.pyplot as plt
 
 """
@@ -237,108 +233,14 @@ def can_place_disc(center, radius, existing_discs):
         if dist < radius + existing_radius:
             return False
     return True
-
-
-def render_discs(discs, x, a, y, integer_points):
-    """
-    Render the parallelogram cell with discs and integer points.
-    """
-    # use a square-ish figure so aspect locking behaves predictably
-    fig, ax = plt.subplots(figsize=(8, 8))
-
-    # Draw parallelogram boundary
-    parallelogram = mpatches.Polygon(
-        [(0, 0), (x, 0), (x + a, y), (a, y)],
-        fill=False,
-        edgecolor='black',
-        linewidth=2,
-        label='Cell boundary'
-    )
-    ax.add_patch(parallelogram)
-
-    # Get unique radii for color coding
-    unique_radii = sorted(set(r for _, r in discs), reverse=True)
-    colors = ['red', 'blue', 'green']  # r1, r2, r3
-    radius_to_color = {r: colors[i] for i, r in enumerate(unique_radii)}
-
-    # Draw discs
-    for center, radius in discs:
-        cx, cy = center
-        # Only draw discs whose centers are in the fundamental cell
-        if 0 <= cx <= x + a and 0 <= cy <= y:
-            circle = Circle(
-                (cx, cy),
-                radius,
-                fill=False,
-                edgecolor=radius_to_color.get(radius, 'gray'),
-                linewidth=1.5,
-                alpha=0.7
-            )
-            ax.add_patch(circle)
-
-    # Draw integer points
-    int_x = [p[0] for p in integer_points]
-    int_y = [p[1] for p in integer_points]
-    ax.scatter(int_x, int_y, c='black', s=20, marker='o',
-               label='Integer points', zorder=5)
-
-    # Draw vertices
-    vertices = [(0, 0), (x, 0), (a, y), (x + a, y)]
-    vert_x = [v[0] for v in vertices]
-    vert_y = [v[1] for v in vertices]
-    ax.scatter(vert_x, vert_y, c='purple', s=100, marker='s',
-               label='Vertices', zorder=6)
-
-    # Create legend for radii
-    legend_elements = [
-        mpatches.Patch(color='black', label='Cell boundary'),
-        mpatches.Patch(color='purple', label='Vertices')
-    ]
-    for i, r in enumerate(unique_radii):
-        legend_elements.append(
-            mpatches.Patch(color=colors[i],
-                           label=f'r{i + 1} = {r:.3f}')
-        )
-    legend_elements.append(
-        mpatches.Patch(color='black', label='Integer points')
-    )
-
-    ax.legend(handles=legend_elements, loc='upper right')
-
-    # Set axis properties
-    x_min, x_max = -0.5, x + a + 0.5
-    y_min, y_max = -0.5, y + 0.5
-    ax.set_xlim(x_min, x_max)
-    ax.set_ylim(y_min, y_max)
-    # prefer set_box_aspect to enforce equal data-unit scaling (width : height = xspan : yspan)
-    xspan = x_max - x_min
-    yspan = y_max - y_min
-    try:
-        ax.set_box_aspect((xspan, yspan))
-    except Exception:
-        # fallback for older matplotlib versions
-        ax.set_aspect('equal', adjustable='box')
-
-    ax.grid(True, alpha=0.3)
-    ax.set_xlabel('x', fontsize=12)
-    ax.set_ylabel('y', fontsize=12)
-    ax.set_title(f'Optimal Disc Placement (P = {P(integer_points, len(discs)):.4f})',
-                 fontsize=14)
-
-    plt.tight_layout()
-    plt.show()
-
-
-x, a, y = 10, 4, 6  # Example parallelogram
-r1 = 3   # Fixed vertex radius
+x, a, y = 5, 2, 3  # Example parallelogram
+r1 = 1.5  # Fixed vertex radius
 
 optimal_r2, optimal_r3, optimal_discs = optimize_three_radii_for_P(x, a, y, r1)
 
 print(f"Optimal r2: {optimal_r2:.4f}")
 print(f"Optimal r3: {optimal_r3:.4f}")
 print(f"Number of discs: {len(optimal_discs)}")
-print(f"The discs are: {optimal_discs}")
-render_discs(optimal_discs, x, a, y, genIntPointsInCell(x, a, y))
 print(f"P (points per disc): {P(genIntPointsInCell(x, a, y), len(optimal_discs)):.4f}")
 """
 TODO:

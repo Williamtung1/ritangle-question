@@ -144,3 +144,95 @@ def check_coverage(params):
     return coverage_violations
 
 
+
+def greedy_disc_placement_three_radii(x, a, y, vertex_radius):
+    """
+    Greedy algorithm to place discs with exactly 3 distinct radii.
+
+    Parameters:
+    - x, a, y: parallelogram parameters
+    - vertex_radius: radius of discs at vertices (largest, r1)
+
+    Returns:
+    - discs: list of (center, radius) tuples
+    """
+    integer_points = genIntPointsInCell(x, a, y)
+    discs = []
+
+    # Step 1: Place discs at vertices with r1 (largest)
+    r1 = vertex_radius
+    vertices = [(0, 0), (x, 0), (a, y), (x + a, y)]
+    for vertex in vertices:
+        discs.append((vertex, r1))
+
+    uncovered = [p for p in integer_points if min_distance_to_any_disc(p, discs) > 0]
+
+    # Step 2: Calculate r2 (medium radius)
+    # Find the largest non-overlapping radius for interior points
+    if uncovered:
+        # Sample point farthest from vertices
+        sample_point = max(uncovered, key=lambda p: min_distance_to_any_disc(p, discs))
+        r2 = min_distance_to_any_disc(sample_point, discs) - 0.01
+        r2 = min(r2, r1 - 0.01)  # Ensure r2 < r1
+    else:
+        return discs  # All points already covered
+
+    # Step 3: Place discs with r2 in high-density regions
+    placed_r2 = []
+    while uncovered and len(placed_r2) < 10:  # Limit r2 discs
+        candidate = max(uncovered, key=lambda p: min_distance_to_any_disc(p, discs))
+
+        # Check if r2 disc fits without overlap
+        can_place = True
+        for center, radius in discs:
+            dist = np.sqrt((candidate[0] - center[0]) ** 2 + (candidate[1] - center[1]) ** 2)
+            if dist < r2 + radius:
+                can_place = False
+                break
+
+        if can_place:
+            discs.append((candidate, r2))
+            placed_r2.append(candidate)
+            if not is_disc_fully_in_cell(candidate, r2, x, a, y):
+                copies = handle_boundary_disc(candidate, r2, x, a, y)
+                for copy in copies:
+                    discs.append((copy, r2))
+
+        uncovered = [p for p in uncovered if min_distance_to_any_disc(p, discs) > 0]
+
+    # Step 4: Calculate r3 (smallest radius)
+    if uncovered:
+        # Find gaps between existing discs
+        gap_candidate = max(uncovered, key=lambda p: min_distance_to_any_disc(p, discs))
+        r3 = min_distance_to_any_disc(gap_candidate, discs) - 0.01
+        r3 = min(r3, r2 - 0.01)  # Ensure r3 < r2
+    else:
+        return discs
+
+    # Step 5: Fill remaining gaps with r3
+    while uncovered:
+        candidate = max(uncovered, key=lambda p: min_distance_to_any_disc(p, discs))
+
+        # Check if r3 disc fits
+        can_place = True
+        for center, radius in discs:
+            dist = np.sqrt((candidate[0] - center[0]) ** 2 + (candidate[1] - center[1]) ** 2)
+            if dist < r3 + radius:
+                can_place = False
+                break
+
+        if can_place:
+            discs.append((candidate, r3))
+            if not is_disc_fully_in_cell(candidate, r3, x, a, y):
+                copies = handle_boundary_disc(candidate, r3, x, a, y)
+                for copy in copies:
+                    discs.append((copy, r3))
+        else:
+            # Cannot place disc without overlap, remove from uncovered
+            uncovered.remove(candidate)
+            continue
+
+        uncovered = [p for p in uncovered if min_distance_to_any_disc(p, discs) > 0]
+
+    return discs
+
