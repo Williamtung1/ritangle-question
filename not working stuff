@@ -235,4 +235,3 @@ def greedy_disc_placement_three_radii(x, a, y, vertex_radius):
         uncovered = [p for p in uncovered if min_distance_to_any_disc(p, discs) > 0]
 
     return discs
-
