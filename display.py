@@ -52,6 +52,8 @@ def display_discs(discs, qx, qa, qy):
 
 if __name__ == "__main__":
     # Example usage
-    example_discs = [((0, 0), 3), ((7, 0), 3), ((1, 10), 3), ((8, 10), 3), ((4, 5), np.float64(2.0999999999999996))]
-
-    display_discs(example_discs, 7,1,10)
+    example_discs = [((0,0),2.5),((5,0),2.5),((2,5),2.5),((7,5),2.5),((4.5,3),0.5),((2.5,2),0.5)]
+    qx = 5
+    qa = 2
+    qy = 5
+    display_discs(example_discs, qx,qa,qy)
